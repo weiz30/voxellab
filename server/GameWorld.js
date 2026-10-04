@@ -81,15 +81,21 @@ export class GameWorld {
 
     const blocks = this._db.loadWorldBlocks(this.id);
     for (const block of blocks) {
-      const { x, y, z, r, g, b } = block;
+      const { x, y, z, r, g, b, removed } = block;
       const bx = Math.floor(x);
       const by = Math.floor(y);
       const bz = Math.floor(z);
-      this.worldMap.place(bx, by, bz);
-      this._cubes.set(`${x},${y},${z}`, { x, y, z, r, g, b });
+      if (removed) {
+        // Tombstone: a generated-terrain block that was removed stays removed.
+        this.worldMap.remove(bx, by, bz);
+        this._cubes.delete(`${x},${y},${z}`);
+      } else {
+        this.worldMap.place(bx, by, bz);
+        this._cubes.set(`${x},${y},${z}`, { x, y, z, r, g, b });
+      }
     }
     if (blocks.length > 0) {
-      console.log(`[world ${this.id}] Loaded ${blocks.length} persisted block(s) from database.`);
+      console.log(`[world ${this.id}] Applied ${blocks.length} persisted block edit(s).`);
     }
   }
 
@@ -276,13 +282,20 @@ export class GameWorld {
 
     this.worldMap.remove(bx, by, bz);
 
-    // Remove from map (O(1) by key)
-    this._cubes.delete(`${x},${y},${z}`);
+    // Remove from map (O(1) by key), capture color for the tombstone.
+    const key = `${x},${y},${z}`;
+    const cube = this._cubes.get(key);
+    this._cubes.delete(key);
 
-    // Remove from database
+    // Persist as a tombstone (removed=1) so regenerated terrain stays removed.
     if (this._db) {
       try {
-        this._db.removeBlock(this.id, x, y, z);
+        this._db.removeBlock(
+          this.id, x, y, z,
+          cube ? cube.r : 0,
+          cube ? cube.g : 0,
+          cube ? cube.b : 0,
+        );
       } catch (err) {
         console.error(`[world ${this.id}] Failed to persist block removal at ${x},${y},${z}:`, err.message);
       }

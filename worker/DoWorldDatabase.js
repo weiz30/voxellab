@@ -46,9 +46,15 @@ export class DoWorldDatabase {
         r         REAL NOT NULL,
         g         REAL NOT NULL,
         b         REAL NOT NULL,
+        removed   INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (world_id, x, y, z)
       );
     `);
+
+    const bcols = [...this._sql.exec('PRAGMA table_info(blocks)')].map((c) => c.name);
+    if (!bcols.includes('removed')) {
+      this._sql.exec('ALTER TABLE blocks ADD COLUMN removed INTEGER NOT NULL DEFAULT 0');
+    }
   }
 
   ensureWorld(id, name) {
@@ -77,21 +83,23 @@ export class DoWorldDatabase {
 
   saveBlock(worldId, x, y, z, r, g, b) {
     this._sql.exec(
-      'INSERT OR REPLACE INTO blocks (world_id, x, y, z, r, g, b) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT OR REPLACE INTO blocks (world_id, x, y, z, r, g, b, removed) VALUES (?, ?, ?, ?, ?, ?, ?, 0)',
       worldId, x, y, z, r, g, b,
     );
   }
 
-  removeBlock(worldId, x, y, z) {
+  removeBlock(worldId, x, y, z, r = 0, g = 0, b = 0) {
+    // Store a tombstone so generated terrain blocks that are removed stay
+    // removed when the terrain is regenerated from its seed.
     this._sql.exec(
-      'DELETE FROM blocks WHERE world_id = ? AND x = ? AND y = ? AND z = ?',
-      worldId, x, y, z,
+      'INSERT OR REPLACE INTO blocks (world_id, x, y, z, r, g, b, removed) VALUES (?, ?, ?, ?, ?, ?, ?, 1)',
+      worldId, x, y, z, r, g, b,
     );
   }
 
   loadWorldBlocks(worldId) {
     return [...this._sql.exec(
-      'SELECT x, y, z, r, g, b FROM blocks WHERE world_id = ?',
+      'SELECT x, y, z, r, g, b, removed FROM blocks WHERE world_id = ?',
       worldId,
     )];
   }

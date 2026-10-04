@@ -41,15 +41,37 @@ export class WorldDO extends DurableObject {
     /** @type {Map<WebSocket, Player>} */
     this._conns = new Map();
 
-    // World style for display in the lobby list ('random' if not generated yet).
+    // World style/seed for the lobby list and terrain regeneration.
     const meta = this._db.getWorldMeta(this._worldId);
     this._style = (meta && meta.style) || 'random';
+    this._seed = (meta && meta.seed) || null;
 
+    // Create the world with persistence temporarily disabled; edits are applied
+    // AFTER terrain is regenerated below so tombstones work against it.
     this._world = new GameWorld(
       this._worldId,
       this._worldId,
       (id) => this._onEmpty(id),
-      this._db,
+      null,
+    );
+
+    // Regenerate terrain from the stored seed (deterministic), then apply edits.
+    if (this._seed !== null) {
+      const { cubes, spawn } = this._buildTerrain(this._style, this._seed);
+      this._loadCubes(cubes);
+      this._world.setSpawn(spawn.x, spawn.y, spawn.z);
+    }
+    this._world._db = this._db;
+    this._world._loadPersistedBlocks();
+  }
+
+  /**
+   * Load generated terrain cubes (tuples [x,y,z,r,g,b]) into the world.
+   * @param {Array<[number,number,number,number,number,number]>} cubes
+   */
+  _loadCubes(cubes) {
+    this._world.loadBlocksFromArray(
+      cubes.map(([x, y, z, r, g, b]) => ({ x, y, z, r, g, b })),
     );
   }
 
@@ -133,10 +155,9 @@ export class WorldDO extends DurableObject {
     // Idempotent world row.
     this._db.ensureWorld(this._worldId, this._worldId);
 
-    // Brand-new world (no terrain generated yet) → generate one from the
-    // requested style/seed, or a random style/seed if not provided.
-    const meta = this._db.getWorldMeta(this._worldId);
-    if (!meta || meta.seed === null) {
+    // Brand-new world (no seed yet) → generate terrain from the requested
+    // style/seed, or a random style/seed if not provided.
+    if (this._seed === null) {
       this._generateTerrain(style, seed);
     }
 
@@ -151,8 +172,25 @@ export class WorldDO extends DurableObject {
   }
 
   /**
-   * Generate a procedural terrain world, persist it to SQLite, load it into
-   * the in-memory GameWorld and place the spawn point on the surface.
+   * Generate terrain cubes + spawn for a style/seed WITHOUT persisting.
+   * @param {string} style
+   * @param {number} seed
+   * @returns {{cubes: Array, spawn: {x:number,y:number,z:number}}}
+   */
+  _buildTerrain(style, seed) {
+    return generateTerrainCubes({
+      size: TERRAIN_SIZE,
+      heightScale: TERRAIN_HEIGHT_SCALE,
+      seed,
+      octaves: TERRAIN_OCTAVES,
+      style,
+    });
+  }
+
+  /**
+   * Generate a procedural terrain world for a brand-new world.
+   * Only the seed/style are persisted (1 row) — the blocks themselves are
+   * regenerated deterministically on load, keeping free-tier write usage tiny.
    *
    * @param {string} [requestedStyle] - one of TERRAIN_STYLES
    * @param {string|number} [requestedSeed] - numeric seed for reproducibility
@@ -170,24 +208,16 @@ export class WorldDO extends DurableObject {
 
     console.log(`[world ${this._worldId}] Generating ${style} terrain, seed=${seed}...`);
 
-    const { cubes, spawn } = generateTerrainCubes({
-      size: TERRAIN_SIZE,
-      heightScale: TERRAIN_HEIGHT_SCALE,
-      seed,
-      octaves: TERRAIN_OCTAVES,
-      style,
-    });
+    const { cubes, spawn } = this._buildTerrain(style, seed);
 
-    // Persist inside a single transaction for speed.
+    // Persist only the seed + style, inside a transaction.
     this.ctx.storage.transactionSync(() => {
-      for (const [x, y, z, r, g, b] of cubes) {
-        this._db.saveBlock(this._worldId, x, y, z, r, g, b);
-      }
       this._db.setWorldMeta(this._worldId, String(seed), style);
     });
 
     this._style = style;
-    this._world.loadBlocksFromArray(cubes.map(([x, y, z, r, g, b]) => ({ x, y, z, r, g, b })));
+    this._seed = String(seed);
+    this._loadCubes(cubes);
     this._world.setSpawn(spawn.x, spawn.y, spawn.z);
 
     console.log(`[world ${this._worldId}] Generated ${cubes.length} block(s).`);
