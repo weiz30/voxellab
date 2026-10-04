@@ -1,0 +1,35 @@
+# Cloudflare Workers configuration for VoxelLab.
+#
+# Deploys a single Worker that serves the built frontend (dist/) AND the
+# multiplayer backend (WebSocket + REST), backed by Durable Objects.
+
+name = "voxellab"
+main = "worker/index.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Serve the Vite production build as static assets.
+# run_worker_first routes every request through the Worker so /ws and /api/*
+# are handled before the asset layer; the Worker falls back to ASSETS.fetch().
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = true
+
+# --- Durable Object bindings ---
+[[durable_objects.bindings]]
+name = "WORLD"
+class_name = "WorldDO"
+
+[[durable_objects.bindings]]
+name = "LOBBY"
+class_name = "LobbyDO"
+
+[[durable_objects.bindings]]
+name = "SCENE"
+class_name = "SceneDO"
+
+# --- Migrations (SQLite-backed Durable Objects, available on the free plan) ---
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["WorldDO", "LobbyDO", "SceneDO"]

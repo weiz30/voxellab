@@ -73,10 +73,16 @@ export function createDiscoverMessage() {
  * @param {string} worldId
  * @param {string} nickname
  * @param {string} [characterId='classic']
- * @returns {{type: string, worldId: string, nickname: string, characterId: string}}
+ * @param {{style?: string, seed?: string|number}} [options] - terrain style / seed for brand-new worlds
+ * @returns {{type: string, worldId: string, nickname: string, characterId: string, style?: string, seed?: string|number}}
  */
-export function createJoinMessage(worldId, nickname, characterId = 'classic') {
-  return { type: JOIN, worldId, nickname, characterId };
+export function createJoinMessage(worldId, nickname, characterId = 'classic', options = {}) {
+  const msg = { type: JOIN, worldId, nickname, characterId };
+  if (options.style) msg.style = options.style;
+  if (options.seed !== undefined && options.seed !== null && options.seed !== '') {
+    msg.seed = String(options.seed);
+  }
+  return msg;
 }
 
 /**

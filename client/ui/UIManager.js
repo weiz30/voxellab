@@ -1,6 +1,26 @@
 import { CHARACTER_PRESETS } from '../../shared/constants.js';
 
 /**
+ * World style → display label & colour dot used in the world list.
+ */
+const STYLE_META = {
+  green:    { label: 'Green',    color: '#3a8f4f' },
+  forest:   { label: 'Forest',   color: '#2e7d32' },
+  desert:   { label: 'Desert',   color: '#d9b45f' },
+  snow:     { label: 'Snow',     color: '#dce8f2' },
+  ocean:    { label: 'Ocean',    color: '#2f7bb8' },
+  volcano:  { label: 'Volcano',  color: '#e05a1a' },
+  candy:    { label: 'Candy',    color: '#c86bd6' },
+  cave:     { label: 'Cave',     color: '#6d5a6e' },
+  skyisland:{ label: 'Sky Isle', color: '#4f9d69' },
+  random:   { label: 'Random',   color: '#8899cc' },
+};
+
+function styleMeta(id) {
+  return STYLE_META[id] || { label: '—', color: '#556688' };
+}
+
+/**
  * Manages DOM overlays: main menu, HUD, disconnect message.
  *
  * Controls visibility transitions between menu and game canvas.
@@ -24,6 +44,7 @@ export class UIManager {
 
     this._createMenuOverlay();
     this._createHUD();
+    this._createHelpOverlay();
   }
 
   // ============================================================
@@ -67,9 +88,46 @@ export class UIManager {
           <button id="btn-offline" class="menu-btn menu-btn-secondary">Play Offline</button>
         </div>
 
+        <div class="menu-section">
+          <button id="btn-help" class="menu-btn menu-btn-secondary">How to Play &amp; Setup</button>
+        </div>
+
         <p class="menu-hint" style="margin-top: 1rem; font-size: 0.75rem;">
-          Start server first: <code>npm run server</code>
+          Hosted on Cloudflare — click "How to Play &amp; Setup" for details.
         </p>
+      </div>
+
+      <div id="create-modal">
+        <div class="create-modal-box">
+          <h2>Create New World</h2>
+          <label class="menu-label" for="create-world-name">World Name</label>
+          <input type="text" id="create-world-name" class="menu-input" maxlength="50"
+                 placeholder="e.g. myworld" autocomplete="off" />
+
+          <label class="menu-label" for="create-world-style">World Style</label>
+          <select id="create-world-style" class="menu-input">
+            <option value="">Random Style</option>
+            <option value="green">Green Mountains</option>
+            <option value="forest">Forest</option>
+            <option value="desert">Desert</option>
+            <option value="snow">Snow / Ice</option>
+            <option value="ocean">Ocean</option>
+            <option value="volcano">Volcano</option>
+            <option value="candy">Candy Rainbow</option>
+            <option value="cave">Cave</option>
+            <option value="skyisland">Sky Islands</option>
+          </select>
+
+          <label class="menu-label" for="create-world-seed">Seed (optional)</label>
+          <input type="text" id="create-world-seed" class="menu-input" maxlength="20"
+                 placeholder="Blank = random" autocomplete="off" />
+          <p class="menu-hint" style="font-size:0.75rem;">Same name + seed + style always makes the same world.</p>
+
+          <div class="menu-section">
+            <button id="btn-create-confirm" class="menu-btn menu-btn-primary">Create</button>
+            <button id="btn-create-cancel" class="menu-btn menu-btn-secondary" style="margin-top:0.5rem;">Cancel</button>
+          </div>
+        </div>
       </div>
 
       <div id="face-preview">
@@ -92,16 +150,23 @@ export class UIManager {
       this._nicknameInput.value = savedNick;
     }
 
+    // Cache create-modal elements
+    this._createModal = overlay.querySelector('#create-modal');
+    this._createWorldName = overlay.querySelector('#create-world-name');
+    this._createWorldStyle = overlay.querySelector('#create-world-style');
+    this._createWorldSeed = overlay.querySelector('#create-world-seed');
+
     // Button handlers
     overlay.querySelector('#btn-create-world').addEventListener('click', () => {
-      const nickname = this._getNickname();
-      if (!nickname) return;
-      const worldName = prompt('Enter a name for your new world:', 'myworld');
-      if (!worldName || !worldName.trim()) return;
-      const cleanName = worldName.trim().slice(0, 50);
-      if (this._onJoinCallback) {
-        this._onJoinCallback(cleanName, nickname);
-      }
+      this._showCreateModal();
+    });
+
+    overlay.querySelector('#btn-create-confirm').addEventListener('click', () => {
+      this._submitCreateModal();
+    });
+
+    overlay.querySelector('#btn-create-cancel').addEventListener('click', () => {
+      this._hideCreateModal();
     });
 
     overlay.querySelector('#btn-refresh-worlds').addEventListener('click', () => {
@@ -115,6 +180,11 @@ export class UIManager {
       if (this._onOfflineCallback) {
         this._onOfflineCallback();
       }
+    });
+
+    // Help button
+    overlay.querySelector('#btn-help').addEventListener('click', () => {
+      this.showHelp();
     });
 
     // Build character selection cards
@@ -309,6 +379,42 @@ export class UIManager {
     return name;
   }
 
+  // --- Create-World modal ---
+
+  _showCreateModal() {
+    if (!this._createModal) return;
+    this._createModal.style.display = 'flex';
+    if (this._createWorldName) this._createWorldName.focus();
+  }
+
+  _hideCreateModal() {
+    if (this._createModal) {
+      this._createModal.style.display = 'none';
+    }
+  }
+
+  _submitCreateModal() {
+    const nickname = this._getNickname();
+    if (!nickname) return;
+
+    const name = (this._createWorldName.value || '').trim().slice(0, 50);
+    if (!name) {
+      alert('Please enter a world name.');
+      return;
+    }
+
+    const options = {};
+    const style = this._createWorldStyle.value;
+    if (style) options.style = style;
+    const seed = this._createWorldSeed.value.trim();
+    if (seed) options.seed = seed;
+
+    this._hideCreateModal();
+    if (this._onJoinCallback) {
+      this._onJoinCallback(name, nickname, options);
+    }
+  }
+
   /**
    * Show the main menu overlay.
    */
@@ -339,10 +445,12 @@ export class UIManager {
       return;
     }
 
-    let html = '<table class="world-table"><thead><tr><th>World</th><th>Players</th><th>Cubes</th><th></th><th></th></tr></thead><tbody>';
+    let html = '<table class="world-table"><thead><tr><th>World</th><th>Style</th><th>Players</th><th>Cubes</th><th></th><th></th></tr></thead><tbody>';
     for (const w of worlds) {
+      const meta = styleMeta(w.style);
       html += `<tr>
         <td>${this._escapeHtml(w.name)}</td>
+        <td><span class="style-dot" style="background:${meta.color}"></span>${meta.label}</td>
         <td>${w.playerCount}/10</td>
         <td>${w.cubeCount}</td>
         <td><button class="menu-btn menu-btn-join" data-world-id="${this._escapeHtml(w.id)}">Join</button></td>
@@ -396,6 +504,7 @@ export class UIManager {
       <div id="chat-area" class="chat-area"></div>
       <input type="text" id="chat-input" class="chat-input" placeholder="Press Enter to chat..."
              maxlength="200" autocomplete="off" />
+      <button id="btn-help-hud" class="help-hud-btn" title="Help / Setup">? Help</button>
     `;
     document.body.appendChild(hud);
     this._hud = hud;
@@ -403,6 +512,10 @@ export class UIManager {
     this._playerCountEl = hud.querySelector('#hud-player-count');
     this._chatArea = hud.querySelector('#chat-area');
     this._chatInput = hud.querySelector('#chat-input');
+
+    hud.querySelector('#btn-help-hud').addEventListener('click', () => {
+      this.showHelp();
+    });
   }
 
   /**
@@ -570,6 +683,126 @@ export class UIManager {
    */
   getSelectedCharacterId() {
     return this._selectedCharacterId;
+  }
+
+  // ============================================================
+  // Help overlay
+  // ============================================================
+
+  _createHelpOverlay() {
+    const overlay = document.createElement('div');
+    overlay.id = 'help-overlay';
+    overlay.innerHTML = `
+      <div class="help-container">
+        <h1>VoxelLab 使用與設定說明</h1>
+        <p class="help-subtle">這是一款多人方塊建造沙盒遊戲（Three.js + Cloudflare Workers）。</p>
+
+        <h2>一、如何開始玩</h2>
+        <ol>
+          <li>輸入<strong>暱稱</strong>（最多 20 字元），並選擇一個角色。</li>
+          <li>點「<strong>Create New World</strong>」→ 輸入世界名稱、選<strong>世界風格</strong>（或留空隨機）、可填<strong>種子 Seed</strong>（留空隨機）→ 建立後會<strong>自動隨機生成地形</strong>。</li>
+          <li>或從下方清單點「<strong>Join</strong>」加入別人已存在的世界。</li>
+          <li>想單人練習就點「<strong>Play Offline</strong>」。</li>
+          <li>進入遊戲後<strong>點一下畫面</strong>鎖定滑鼠即可操作；按 <code>Esc</code> 釋放滑鼠。</li>
+        </ol>
+
+        <h3>世界風格</h3>
+        <ul>
+          <li><strong>Green Mountains</strong> 綠地山脈（預設）</li>
+          <li><strong>Forest</strong> 茂密森林</li>
+          <li><strong>Desert</strong> 沙漠</li>
+          <li><strong>Snow / Ice</strong> 雪地冰原</li>
+          <li><strong>Ocean</strong> 海洋</li>
+          <li><strong>Volcano</strong> 火山熔岩</li>
+          <li><strong>Candy Rainbow</strong> 彩虹糖果</li>
+          <li><strong>Cave</strong> 地下洞穴（地形內含隧道）</li>
+          <li><strong>Sky Islands</strong> 漂浮空島</li>
+          <li>風格 + 種子相同 → 一定生成一模一樣的世界。世界清單會顯示每個世界的風格。</li>
+        </ul>
+
+        <h2>二、操作控制</h2>
+        <table class="help-table">
+          <tr><th>動作</th><th>按鍵 / 滑鼠</th></tr>
+          <tr><td>移動</td><td><code>W A S D</code></td></tr>
+          <tr><td>跳躍</td><td><code>Space</code></td></tr>
+          <tr><td>放置方塊</td><td>滑鼠<strong>左鍵</strong>（點方塊面或地面）</td></tr>
+          <tr><td>移除方塊</td><td>滑鼠<strong>右鍵</strong>（或 <code>Ctrl + 左鍵</code>）</td></tr>
+          <tr><td>視角模式</td><td>按 <code>H</code> 開啟設定面板切換（Orbit / Follow / FPS）</td></tr>
+          <tr><td>選擇方塊顏色</td><td>按 <code>H</code> → 開啟 <code>Color Picker</code> 選色</td></tr>
+          <tr><td>聊天（多人）</td><td><code>Enter</code> 開啟輸入，再 <code>Enter</code> 送出</td></tr>
+          <tr><td>離開／關閉聊天</td><td><code>Esc</code></td></tr>
+        </table>
+        <p class="help-subtle">Orbit 模式：左鍵拖曳旋轉、右鍵拖曳縮放；FPS 模式才有第一人稱滑鼠視角。</p>
+
+        <h2>三、多人玩法</h2>
+        <ul>
+          <li>每位朋友開啟<strong>同一個網址</strong>，輸入<strong>相同世界名稱</strong>即可一起建造。</li>
+          <li>世界是<strong>持久的</strong>：關閉網頁後，方塊仍會保留。</li>
+          <li>「<strong>Delete</strong>」可刪除整個世界（不可復原，請小心）。</li>
+          <li>最多 10 人同時在一個世界。</li>
+        </ul>
+
+        <h2>四、離線單人模式</h2>
+        <ul>
+          <li>在網址後加 <code>?offline</code>，例如 <code>.../workers.dev/?offline</code>。</li>
+          <li>離線模式會把自己的場景存到雲端（同一個世界名稱），下次會自動載入。</li>
+        </ul>
+
+        <h2>五、設定與維護（站長專區）</h2>
+        <h3>正式網址</h3>
+        <p><code>https://voxellab.weiz30.workers.dev</code></p>
+
+        <h3>本機開發</h3>
+        <ul>
+          <li>前端開發：<code>npm run dev</code> → 開啟 <code>http://localhost:5173</code></li>
+          <li>舊版本機遊戲伺服器：<code>npm run server</code>（僅在需要測 Node 版時用）</li>
+        </ul>
+
+        <h3>改完程式重新部署</h3>
+        <pre><code>npm run build
+npx wrangler deploy</code></pre>
+        <p class="help-subtle">建置前記得先改 <code>client/</code> 或 <code>worker/</code> 的程式。</p>
+
+        <h3>其他常用指令</h3>
+        <ul>
+          <li>看即時日誌：<code>npx wrangler tail</code></li>
+          <li>本機模擬測試：<code>npx wrangler dev</code></li>
+          <li>看目前登入帳號：<code>npx wrangler whoami</code></li>
+        </ul>
+
+        <h3>免費額度提醒</h3>
+        <ul>
+          <li>Durable Object：每天 <strong>100,000 次請求</strong>、<strong>13,000 GB-s</strong>、<strong>5 GB 儲存</strong>。</li>
+          <li>有人連線遊玩時才會累計執行時間；小規模使用都在免費範圍內。</li>
+          <li>原始碼位於本機 <code>D:\\OpenCode\\VoxelLab</code>。</li>
+        </ul>
+
+        <button id="btn-help-close" class="menu-btn menu-btn-primary help-btn-close">Close / 關閉</button>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    this._helpOverlay = overlay;
+
+    overlay.querySelector('#btn-help-close').addEventListener('click', () => {
+      this.hideHelp();
+    });
+
+    // Clicking the backdrop (outside the panel) also closes it.
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) this.hideHelp();
+    });
+  }
+
+  showHelp() {
+    if (this._helpOverlay) {
+      this._helpOverlay.style.display = 'flex';
+    }
+  }
+
+  hideHelp() {
+    if (this._helpOverlay) {
+      this._helpOverlay.style.display = 'none';
+    }
   }
 
   // ============================================================

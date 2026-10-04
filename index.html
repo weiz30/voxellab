@@ -234,6 +234,16 @@
         background: rgba(60, 80, 180, 0.15);
       }
 
+      .style-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
       /* --- HUD --- */
       #hud {
         position: fixed;
@@ -401,6 +411,177 @@
         font-size: 0.85rem;
         font-weight: 600;
         color: #8899cc;
+        margin-top: 0.5rem;
+      }
+
+      /* --- Help Overlay --- */
+      #help-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        overflow-y: auto;
+        background: rgba(5, 5, 20, 0.94);
+        z-index: 3000;
+        color: #e0e0ff;
+        padding: 2rem 1rem;
+      }
+
+      .help-container {
+        max-width: 720px;
+        width: 100%;
+        background: rgba(20, 20, 60, 0.9);
+        border: 1px solid rgba(100, 120, 200, 0.3);
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+      }
+
+      .help-container h1 {
+        font-size: 1.6rem;
+        color: #8899ff;
+        margin: 0 0 0.25rem 0;
+      }
+
+      .help-container h2 {
+        font-size: 1.1rem;
+        color: #ccddff;
+        margin: 1.5rem 0 0.5rem 0;
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid rgba(100, 120, 200, 0.2);
+      }
+
+      .help-container h3 {
+        font-size: 0.95rem;
+        color: #aabbdd;
+        margin: 1rem 0 0.3rem 0;
+      }
+
+      .help-container p, .help-container li {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: #ccddff;
+      }
+
+      .help-container ul {
+        margin: 0.3rem 0 0.5rem 0;
+        padding-left: 1.2rem;
+      }
+
+      .help-container code {
+        background: rgba(100, 120, 200, 0.15);
+        padding: 0.1rem 0.4rem;
+        border-radius: 3px;
+        font-size: 0.85em;
+        color: #dde4ff;
+      }
+
+      .help-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        margin: 0.5rem 0;
+      }
+
+      .help-table th {
+        text-align: left;
+        padding: 0.4rem 0.6rem;
+        color: #6677aa;
+        font-weight: 600;
+        border-bottom: 1px solid rgba(100, 120, 200, 0.25);
+      }
+
+      .help-table td {
+        padding: 0.4rem 0.6rem;
+        color: #ccddff;
+        border-bottom: 1px solid rgba(100, 120, 200, 0.1);
+      }
+
+      .help-subtle {
+        color: #6677aa;
+        font-size: 0.8rem;
+      }
+
+      .help-btn-close {
+        margin-top: 1.5rem;
+        width: 100%;
+      }
+
+      .help-hud-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(30, 30, 70, 0.85);
+        color: #aabbdd;
+        border: 1px solid rgba(100, 120, 200, 0.4);
+        border-radius: 6px;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        pointer-events: auto;
+        font-family: inherit;
+        z-index: 120;
+      }
+
+      .help-hud-btn:hover {
+        background: rgba(60, 80, 180, 0.85);
+        color: #fff;
+      }
+
+      .help-container pre {
+        background: rgba(10, 10, 40, 0.85);
+        border: 1px solid rgba(100, 120, 200, 0.25);
+        border-radius: 6px;
+        padding: 0.75rem 1rem;
+        overflow-x: auto;
+        margin: 0.5rem 0;
+      }
+
+      .help-container pre code {
+        background: none;
+        padding: 0;
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+
+      /* --- Create World Modal --- */
+      #create-modal {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(5, 5, 20, 0.8);
+        z-index: 1500;
+      }
+
+      .create-modal-box {
+        max-width: 380px;
+        width: 90%;
+        padding: 1.5rem 2rem;
+        background: rgba(20, 20, 60, 0.95);
+        border: 1px solid rgba(100, 120, 200, 0.35);
+        border-radius: 12px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+      }
+
+      .create-modal-box h2 {
+        margin: 0 0 1rem 0;
+        font-size: 1.2rem;
+        color: #8899ff;
+      }
+
+      .create-modal-box .menu-input {
+        margin-bottom: 0.8rem;
+      }
+
+      .create-modal-box select.menu-input {
+        appearance: none;
+        cursor: pointer;
+      }
+
+      .create-modal-box .menu-section {
         margin-top: 0.5rem;
       }
     </style>

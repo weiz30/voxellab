@@ -3,6 +3,7 @@ dist/
 node_modules/
 public/scenes/
 data/
+.wrangler/
 .claude/
 CLAUDE.md
 

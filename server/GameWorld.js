@@ -93,6 +93,36 @@ export class GameWorld {
     }
   }
 
+  /**
+   * Bulk-load blocks into memory without broadcasting or re-persisting.
+   * Used by the Cloudflare worker after generating a fresh terrain world.
+   *
+   * @param {Array<{x:number, y:number, z:number, r:number, g:number, b:number}>} blocks
+   */
+  loadBlocksFromArray(blocks) {
+    for (const block of blocks) {
+      const { x, y, z, r, g, b } = block;
+      const bx = Math.floor(x);
+      const by = Math.floor(y);
+      const bz = Math.floor(z);
+      this.worldMap.place(bx, by, bz);
+      this._cubes.set(`${x},${y},${z}`, { x, y, z, r, g, b });
+    }
+  }
+
+  /**
+   * Override the spawn position (used by generated terrain worlds so the
+   * player spawns on the surface instead of in mid-air).
+   * @param {number} x
+   * @param {number} y
+   * @param {number} z
+   */
+  setSpawn(x, y, z) {
+    this._spawnX = x;
+    this._spawnY = y;
+    this._spawnZ = z;
+  }
+
   // --- Player Management ---
 
   /**

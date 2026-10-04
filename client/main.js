@@ -167,7 +167,7 @@ document.body.appendChild(stats.dom);
  * @param {string} worldId
  * @param {string} nickname
  */
-function joinMultiplayerWorld(worldId, nickname) {
+function joinMultiplayerWorld(worldId, nickname, options = {}) {
   isMultiplayer = true;
 
   // Switch Asset Manager to online mode (Tool Box visible, Color Picker hidden)
@@ -194,12 +194,15 @@ function joinMultiplayerWorld(worldId, nickname) {
   });
 
   networkClient.onOpen(() => {
-    networkClient.send(createJoinMessage(worldId, nickname, selectedCharacterId));
+    networkClient.send(createJoinMessage(worldId, nickname, selectedCharacterId, options));
     console.log(`[main] Joining world "${worldId}" as "${nickname}" with char "${selectedCharacterId}"...`);
   });
 
-  // Connect
-  const serverUrl = `ws://${window.location.hostname}:3001`;
+  // Connect — same-origin WebSocket endpoint (/ws), protocol follows the page.
+  // The worldId is carried in the URL so the Worker can route to the right
+  // Durable Object before the join handshake.
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const serverUrl = `${wsProtocol}//${window.location.host}/ws?worldId=${encodeURIComponent(worldId)}`;
   networkClient.connect(serverUrl);
 }
 
@@ -317,8 +320,8 @@ function returnToMenu() {
 // UI Callbacks
 // ============================================================
 
-uiManager.onJoin((worldId, nickname) => {
-  joinMultiplayerWorld(worldId, nickname);
+uiManager.onJoin((worldId, nickname, options) => {
+  joinMultiplayerWorld(worldId, nickname, options);
 });
 
 uiManager.onRefreshWorlds(() => {
