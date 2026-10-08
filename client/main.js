@@ -139,6 +139,9 @@ let remotePlayerManager = null;
 let interactionManager = null;
 let isMultiplayer = false;
 
+/** Spawn point from the server's "joined" message (terrain surface). */
+let pendingSpawn = null;
+
 // ============================================================
 // GUI setup
 // ============================================================
@@ -370,6 +373,12 @@ function handleNetworkMessage(msg) {
   switch (msg.type) {
     case 'joined':
       stateManager.setIdentity(msg.playerId, msg.worldId, stateManager.nickname);
+      // Remember the server-authoritative spawn point (terrain surface).
+      pendingSpawn = {
+        x: typeof msg.spawnX === 'number' ? msg.spawnX : null,
+        y: typeof msg.spawnY === 'number' ? msg.spawnY : null,
+        z: typeof msg.spawnZ === 'number' ? msg.spawnZ : null,
+      };
       console.log(`[main] Joined world "${msg.worldId}" as ${msg.playerId}`);
       break;
 
@@ -430,8 +439,13 @@ function handleWorldState(msg) {
   }
   cubeManager.endBulkLoad();
 
-  // Set local player spawn
-  lego.group.position.set(0, 5, 0);
+  // Set local player spawn (server-provided terrain surface, or fallback)
+  if (pendingSpawn && pendingSpawn.y !== null) {
+    lego.group.position.set(pendingSpawn.x, pendingSpawn.y, pendingSpawn.z);
+  } else {
+    lego.group.position.set(0, 5, 0);
+  }
+  pendingSpawn = null;
 
   // Create remote player models
   for (const p of msg.players) {

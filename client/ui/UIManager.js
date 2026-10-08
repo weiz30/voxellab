@@ -719,6 +719,7 @@ export class UIManager {
           <li><strong>Sky Islands</strong> 漂浮空島</li>
           <li>風格 + 種子相同 → 一定生成一模一樣的世界。世界清單會顯示每個世界的風格。</li>
         </ul>
+        <p class="help-subtle">世界範圍約 128×128 格，往四周走可以探索整片地形；邊緣之外是虛空（會掉下去）。</p>
 
         <h2>二、操作控制</h2>
         <table class="help-table">

@@ -23,10 +23,11 @@ import {
 } from '../shared/messages.js';
 import { TERRAIN_STYLES, generateTerrainCubes } from '../client/world/TerrainGenerator.js';
 
-// Generated-terrain size/height. Kept modest so first-join generation stays
-// fast and the Durable Object SQLite storage stays small on the free tier.
-const TERRAIN_SIZE = 48;
-const TERRAIN_HEIGHT_SCALE = 14;
+// Generated-terrain size/height. The blocks are regenerated from the seed on
+// load (never stored per-block), so a large world only costs a tiny meta row
+// in storage; the join payload scales with world size instead.
+const TERRAIN_SIZE = 128;
+const TERRAIN_HEIGHT_SCALE = 16;
 const TERRAIN_OCTAVES = 5;
 
 export class WorldDO extends DurableObject {
