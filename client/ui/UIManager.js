@@ -723,13 +723,13 @@ export class UIManager {
         <h2>二、操作控制</h2>
         <table class="help-table">
           <tr><th>動作</th><th>按鍵 / 滑鼠</th></tr>
-          <tr><td>移動</td><td><code>W A S D</code></td></tr>
-          <tr><td>跳躍</td><td><code>Space</code></td></tr>
-          <tr><td>放置方塊</td><td>滑鼠<strong>左鍵</strong>（點方塊面或地面）</td></tr>
-          <tr><td>移除方塊</td><td>滑鼠<strong>右鍵</strong>（或 <code>Ctrl + 左鍵</code>）</td></tr>
+          <tr><td>移動</td><td><code>W A S D</code> 或 <code>↑ ↓ ← →</code> 方向鍵</td></tr>
+          <tr><td>跳躍</td><td><code>Space</code> 或 <code>X</code></td></tr>
+          <tr><td>放置方塊</td><td>滑鼠<strong>左鍵</strong>，或 <code>Z</code>（準心處）</td></tr>
+          <tr><td>移除方塊</td><td>滑鼠<strong>右鍵</strong>，或 <code>C</code>（準心處）</td></tr>
           <tr><td>視角模式</td><td>按 <code>H</code> 開啟設定面板切換（Orbit / Follow / FPS）</td></tr>
           <tr><td>選擇方塊顏色</td><td>按 <code>H</code> → 開啟 <code>Color Picker</code> 選色</td></tr>
-          <tr><td>聊天（多人）</td><td><code>Enter</code> 開啟輸入，再 <code>Enter</code> 送出</td></tr>
+          <tr><td>聊天（多人）</td><td><code>Enter</code> 或 <code>V</code> 開啟輸入，再 <code>Enter</code> 送出</td></tr>
           <tr><td>離開／關閉聊天</td><td><code>Esc</code></td></tr>
         </table>
         <p class="help-subtle">Orbit 模式：左鍵拖曳旋轉、右鍵拖曳縮放；FPS 模式才有第一人稱滑鼠視角。</p>

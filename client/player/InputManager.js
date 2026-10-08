@@ -3,12 +3,18 @@ export class InputManager {
     this._keys = {
       w: false, a: false, s: false, d: false, space: false,
       enter: false, escape: false,
+      z: false, c: false, v: false,
     };
 
     // One-shot key tracking: consumeKey() reads and clears these
-    this._justPressed = { enter: false, escape: false };
+    // enter/escape toggle chat; place/remove/chat are action keys (Z/C/V).
+    this._justPressed = { enter: false, escape: false, place: false, remove: false, chat: false };
 
     this._onKeyDown = (e) => {
+      // Ignore game keys while typing in a text field (chat, world name, seed...).
+      const el = document.activeElement;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return;
+
       // When a modifier key is pressed, reset all tracked keys.
       // Browsers stop sending keyup for held keys when a modifier is
       // pressed, which would leave movement keys stuck "on".
@@ -21,12 +27,44 @@ export class InputManager {
 
       // Prevent default for game keys to avoid browser shortcuts
       switch (e.code) {
-        case 'KeyW': this._keys.w = true; break;
-        case 'KeyA': this._keys.a = true; break;
-        case 'KeyS': this._keys.s = true; break;
-        case 'KeyD': this._keys.d = true; break;
+        case 'KeyW':
+        case 'ArrowUp':
+          this._keys.w = true;
+          e.preventDefault();
+          break;
+        case 'KeyA':
+        case 'ArrowLeft':
+          this._keys.a = true;
+          e.preventDefault();
+          break;
+        case 'KeyS':
+        case 'ArrowDown':
+          this._keys.s = true;
+          e.preventDefault();
+          break;
+        case 'KeyD':
+        case 'ArrowRight':
+          this._keys.d = true;
+          e.preventDefault();
+          break;
         case 'Space':
+        case 'KeyX':
           this._keys.space = true;
+          e.preventDefault();
+          break;
+        case 'KeyZ':
+          if (!this._keys.z) this._justPressed.place = true;
+          this._keys.z = true;
+          e.preventDefault();
+          break;
+        case 'KeyC':
+          if (!this._keys.c) this._justPressed.remove = true;
+          this._keys.c = true;
+          e.preventDefault();
+          break;
+        case 'KeyV':
+          if (!this._keys.v) this._justPressed.chat = true;
+          this._keys.v = true;
           e.preventDefault();
           break;
         case 'Enter':
@@ -47,13 +85,21 @@ export class InputManager {
 
     this._onKeyUp = (e) => {
       switch (e.code) {
-        case 'KeyW': this._keys.w = false; break;
-        case 'KeyA': this._keys.a = false; break;
-        case 'KeyS': this._keys.s = false; break;
-        case 'KeyD': this._keys.d = false; break;
-        case 'Space': this._keys.space = false; break;
+        case 'KeyW':
+        case 'ArrowUp': this._keys.w = false; break;
+        case 'KeyA':
+        case 'ArrowLeft': this._keys.a = false; break;
+        case 'KeyS':
+        case 'ArrowDown': this._keys.s = false; break;
+        case 'KeyD':
+        case 'ArrowRight': this._keys.d = false; break;
+        case 'Space':
+        case 'KeyX': this._keys.space = false; break;
         case 'Enter': this._keys.enter = false; break;
         case 'Escape': this._keys.escape = false; break;
+        case 'KeyZ': this._keys.z = false; break;
+        case 'KeyC': this._keys.c = false; break;
+        case 'KeyV': this._keys.v = false; break;
       }
     };
 

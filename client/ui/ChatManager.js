@@ -40,8 +40,8 @@ export class ChatManager {
    * Update chat state based on key presses. Call every frame.
    */
   update() {
-    // Check for Enter press (toggle chat)
-    if (this._input.consumeKey('enter')) {
+    // Check for Enter/V press (toggle chat)
+    if (this._input.consumeKey('chat') || this._input.consumeKey('enter')) {
       if (!this._chatActive && !this._ui.isChatFocused()) {
         this._openChat();
       }

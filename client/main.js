@@ -596,8 +596,14 @@ function animate(time) {
 
   stats.begin();
 
-  // --- Chat manager update (checks for Enter/Escape) ---
+  // --- Chat manager update (checks for Enter/Escape/V) ---
   chatManager.update();
+
+  // --- Keyboard action keys: Z place / C remove at crosshair ---
+  if (interactionManager) {
+    if (inputManager.consumeKey('place')) interactionManager.placeAtTarget();
+    if (inputManager.consumeKey('remove')) interactionManager.removeAtTarget();
+  }
 
   // --- Local player physics + animation ---
   // Only run physics when in game (multiplayer connected or offline mode active).

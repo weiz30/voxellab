@@ -153,6 +153,44 @@ export class InteractionManager {
     }
   }
 
+  /**
+   * Place a cube at the camera's centre target (crosshair).
+   * Used by the keyboard action key (Z) — same logic as a left click.
+   */
+  placeAtTarget() {
+    if (this._ctrlGUI && this._ctrlGUI.currentName === 'Follow') return;
+
+    const { origin, direction } = VoxelRaycaster.centerRay(this._camera);
+    const hit = VoxelRaycaster.raycast(origin, direction, this._worldMap, MAX_RAY_DISTANCE);
+
+    if (hit) {
+      if (this._canPlaceBlock(hit.placeX, hit.placeY, hit.placeZ)) {
+        this._placeCube(hit.placeX, hit.placeY, hit.placeZ);
+      }
+      return;
+    }
+
+    // No cube hit — try ground
+    const cell = VoxelRaycaster.pickGround(origin, direction, GROUND_SIZE, MAX_RAY_DISTANCE);
+    if (cell && this._canPlaceBlock(cell.x, 0.5, cell.z)) {
+      this._placeCube(cell.x, 0.5, cell.z);
+    }
+  }
+
+  /**
+   * Remove a cube at the camera's centre target (crosshair).
+   * Used by the keyboard action key (C) — same logic as a right click.
+   */
+  removeAtTarget() {
+    if (this._ctrlGUI && this._ctrlGUI.currentName === 'Follow') return;
+
+    const { origin, direction } = VoxelRaycaster.centerRay(this._camera);
+    const hit = VoxelRaycaster.raycast(origin, direction, this._worldMap, MAX_RAY_DISTANCE);
+    if (hit) {
+      this._removeCube(hit.cubeX, hit.cubeY, hit.cubeZ);
+    }
+  }
+
   _isPointerLock() {
     return this._ctrlGUI.currentName === 'FPS' || this._ctrlGUI.currentName === 'Follow';
   }
